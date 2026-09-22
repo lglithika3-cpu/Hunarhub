@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container navbar-inner">
+        <a href="../index.html" class="logo">Hunar<span>Hub</span></a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Services</a>
+            <a href="profile.html">Profile</a>
+            <button onclick="logout()" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="container">
+
+        <div class="dashboard-header">
+            <div>
+                <h1>Welcome to HunarHub</h1>
+                <p id="welcomeText">Loading your profile...</p>
+            </div>
+
+            <a href="marketplace.html" class="btn btn-primary">
+                Explore Marketplace
+            </a>
+        </div>
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <h3 id="orderCount">0</h3>
+                <p>My Orders</p>
+            </div>
+
+            <div class="stat-card">
+                <h3 id="serviceCount">0</h3>
+                <p>Service Requests</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>6</h3>
+                <p>Local Categories</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>✓</h3>
+                <p>Local Marketplace</p>
+            </div>
+
+        </div>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="category-icon">🛍️</div>
+                <h3>Explore Products</h3>
+                <p>
+                    Discover products created by local entrepreneurs,
+                    artisans and vendors.
+                </p>
+                <br>
+                <a href="marketplace.html" class="btn btn-primary">
+                    Browse Marketplace
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="category-icon">🧵</div>
+                <h3>Request a Service</h3>
+                <p>
+                    Connect with local skilled professionals for
+                    customized services.
+                </p>
+                <br>
+                <a href="marketplace.html" class="btn btn-secondary">
+                    Find Services
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="category-icon">📦</div>
+                <h3>Track Orders</h3>
+                <p>
+                    View your orders and monitor their current status.
+                </p>
+                <br>
+                <a href="orders.html" class="btn btn-outline">
+                    View Orders
+                </a>
+            </div>
+
+        </div>
+
+        <div class="card" style="margin-top:30px;">
+            <h3>Privacy-Aware Local Discovery</h3>
+
+            <p>
+                HunarHub allows entrepreneurs to control how their
+                location is displayed.
+            </p>
+
+            <div class="location-note">
+                <strong>Location Privacy:</strong>
+                Entrepreneurs may display their exact location,
+                general area, or hide their location completely.
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script src="../js/app.js?v=2"></script>
+
+<script>
+async function loadDashboard() {
+    try {
+        const user = await getCurrentUser();
+
+        if (!user) {
+            window.location.href = "/login.html";
+            return;
+        }
+
+        if (String(user.role).toUpperCase() !== "CUSTOMER") {
+            alert("Customer access required.");
+            redirectByRole(user);
+            return;
+        }
+
+        document.getElementById("welcomeText").textContent =
+            "Welcome, " + user.name + "! Discover local products and services.";
+
+        const orders = await apiRequest("/customer/orders");
+
+        if (Array.isArray(orders)) {
+            document.getElementById("orderCount").textContent = orders.length;
+        } else if (orders.orders) {
+            document.getElementById("orderCount").textContent = orders.orders.length;
+        }
+
+        const requests = await apiRequest("/customer/service-requests");
+
+        if (Array.isArray(requests)) {
+            document.getElementById("serviceCount").textContent = requests.length;
+        } else if (requests.service_requests) {
+            document.getElementById("serviceCount").textContent =
+                requests.service_requests.length;
+        }
+
+    } catch (error) {
+        console.error(error);
+        document.getElementById("welcomeText").textContent =
+            "Unable to load customer information.";
+    }
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

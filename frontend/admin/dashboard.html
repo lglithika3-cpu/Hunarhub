@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container navbar-inner">
+        <a href="../index.html" class="logo">Hunar<span>Hub</span></a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="entrepreneurs.html">Entrepreneurs</a>
+            <a href="categories.html">Categories</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="reviews.html">Reviews</a>
+            <a href="reports.html">Reports</a>
+            <button onclick="logout()" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="container">
+
+        <div class="dashboard-header">
+            <div>
+                <h1 id="welcomeTitle">Admin Dashboard</h1>
+                <p>Manage the HunarHub local micro-entrepreneur marketplace.</p>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <p id="userCount">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Entrepreneurs</h3>
+                <p id="entrepreneurCount">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Products</h3>
+                <p id="productCount">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Services</h3>
+                <p id="serviceCount">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Orders</h3>
+                <p id="orderCount">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Service Requests</h3>
+                <p id="requestCount">0</p>
+            </div>
+
+        </div>
+
+        <div class="section">
+
+            <div class="section-header">
+                <h2>Administration</h2>
+            </div>
+
+            <div class="card">
+
+                <p>
+                    Use the Admin Dashboard to monitor users,
+                    entrepreneurs, products, services, orders,
+                    service requests and reviews.
+                </p>
+
+                <div class="quick-actions">
+
+                    <a href="users.html" class="btn btn-primary">
+                        Manage Users
+                    </a>
+
+                    <a href="entrepreneurs.html" class="btn btn-primary">
+                        Verify Entrepreneurs
+                    </a>
+
+                    <a href="categories.html" class="btn btn-outline">
+                        Manage Categories
+                    </a>
+
+                    <a href="reports.html" class="btn btn-outline">
+                        View Reports
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="section">
+
+            <div class="section-header">
+                <h2>Marketplace Management</h2>
+            </div>
+
+            <div class="card">
+
+                <div class="quick-actions">
+
+                    <a href="products.html" class="btn btn-outline">
+                        Manage Products
+                    </a>
+
+                    <a href="services.html" class="btn btn-outline">
+                        Manage Services
+                    </a>
+
+                    <a href="orders.html" class="btn btn-outline">
+                        Manage Orders
+                    </a>
+
+                    <a href="service-requests.html" class="btn btn-outline">
+                        Manage Requests
+                    </a>
+
+                    <a href="reviews.html" class="btn btn-outline">
+                        Review Management
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="section">
+
+            <div class="section-header">
+                <h2>System Status</h2>
+            </div>
+
+            <div class="card">
+
+                <p>
+                    <strong>Admin Access:</strong>
+                    <span id="adminStatus">Checking...</span>
+                </p>
+
+                <p>
+                    <strong>Marketplace:</strong>
+                    <span id="marketplaceStatus">Active</span>
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+
+<script>
+
+async function loadDashboard() {
+
+    try {
+
+        const result =
+            await apiRequest("/admin/dashboard");
+
+        const data =
+            result.dashboard ||
+            result;
+
+        document.getElementById("userCount").textContent =
+            data.user_count ??
+            data.users_count ??
+            data.total_users ??
+            0;
+
+        document.getElementById("entrepreneurCount").textContent =
+            data.entrepreneur_count ??
+            data.entrepreneurs_count ??
+            data.total_entrepreneurs ??
+            0;
+
+        document.getElementById("productCount").textContent =
+            data.product_count ??
+            data.products_count ??
+            data.total_products ??
+            0;
+
+        document.getElementById("serviceCount").textContent =
+            data.service_count ??
+            data.services_count ??
+            data.total_services ??
+            0;
+
+        document.getElementById("orderCount").textContent =
+            data.order_count ??
+            data.orders_count ??
+            data.total_orders ??
+            0;
+
+        document.getElementById("requestCount").textContent =
+            data.service_request_count ??
+            data.requests_count ??
+            data.total_service_requests ??
+            0;
+
+        document.getElementById("adminStatus").textContent =
+            "Authenticated";
+
+    } catch (error) {
+
+        document.getElementById("adminStatus").textContent =
+            "Unable to load dashboard";
+
+        console.error(error);
+
+    }
+
+}
+
+loadDashboard();
+
+</script>
+
+</body>
+</html>

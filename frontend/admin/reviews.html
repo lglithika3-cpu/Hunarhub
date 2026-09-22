@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Management | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-content">
+        <a href="dashboard.html" class="logo">HunarHub</a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="entrepreneurs.html">Entrepreneurs</a>
+            <a href="categories.html">Categories</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="reviews.html">Reviews</a>
+            <a href="reports.html">Reports</a>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<section class="page-header">
+    <div class="container">
+        <h1>Review Management</h1>
+        <p>Monitor customer feedback and marketplace ratings.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        <div class="card">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>Customer Reviews</h2>
+                    <p>Review marketplace feedback.</p>
+                </div>
+
+                <button
+                    class="btn btn-primary"
+                    onclick="loadReviews()"
+                >
+                    Refresh
+                </button>
+
+            </div>
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Entrepreneur</th>
+                            <th>Product</th>
+                            <th>Rating</th>
+                            <th>Review</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="reviewsTable">
+                        <tr>
+                            <td colspan="7">
+                                Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<script src="../js/app.js"></script>
+
+<script>
+async function loadReviews() {
+
+    const table =
+        document.getElementById("reviewsTable");
+
+    try {
+
+        const data =
+            await apiRequest("/admin/reviews");
+
+        const reviews =
+            Array.isArray(data)
+                ? data
+                : data.reviews || data.data || [];
+
+        if (!reviews.length) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        No reviews found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        table.innerHTML =
+            reviews.map(review => {
+
+                const date =
+                    review.created_at
+                        ? new Date(
+                            review.created_at
+                        ).toLocaleDateString()
+                        : "-";
+
+                return `
+                    <tr>
+
+                        <td>
+                            #${review.id ?? "-"}
+                        </td>
+
+                        <td>
+                            ${review.customer_name
+                                ?? review.customer
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ${review.business_name
+                                ?? review.entrepreneur_name
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ${review.product_name
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${review.rating ?? "-"}/5
+                            </strong>
+                        </td>
+
+                        <td>
+                            ${review.review_text
+                                ?? review.review
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ${date}
+                        </td>
+
+                    </tr>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+loadReviews();
+</script>
+
+</body>
+</html>

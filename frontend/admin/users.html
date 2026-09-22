@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-content">
+        <a href="dashboard.html" class="logo">HunarHub</a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="entrepreneurs.html">Entrepreneurs</a>
+            <a href="categories.html">Categories</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="reviews.html">Reviews</a>
+            <a href="reports.html">Reports</a>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<section class="page-header">
+    <div class="container">
+        <h1>User Management</h1>
+        <p>Manage HunarHub customer, entrepreneur and administrator accounts.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        <div id="message"></div>
+
+        <div class="card">
+            <div class="section-header">
+                <div>
+                    <h2>Registered Users</h2>
+                    <p>View users and update their roles.</p>
+                </div>
+
+                <button class="btn btn-primary" onclick="loadUsers()">
+                    Refresh
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Role</th>
+                            <th>Language</th>
+                            <th>Location</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="usersTable">
+                        <tr>
+                            <td colspan="9">Loading users...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script src="../js/app.js"></script>
+
+<script>
+async function loadUsers() {
+    const table = document.getElementById("usersTable");
+
+    table.innerHTML = `
+        <tr>
+            <td colspan="9">Loading users...</td>
+        </tr>
+    `;
+
+    try {
+        const data = await apiRequest("/admin/users");
+
+        const users = Array.isArray(data)
+            ? data
+            : data.users || data.data || [];
+
+        if (!users.length) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="9">No users found.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        table.innerHTML = users.map(user => {
+
+            const role = String(
+                user.role || "CUSTOMER"
+            ).toUpperCase();
+
+            const locationPermission =
+                user.location_permission
+                    ? "Allowed"
+                    : "Denied";
+
+            const created =
+                user.created_at
+                    ? new Date(user.created_at).toLocaleDateString()
+                    : "-";
+
+            return `
+                <tr>
+                    <td>${user.id ?? "-"}</td>
+
+                    <td>
+                        <strong>${user.name ?? "-"}</strong>
+                    </td>
+
+                    <td>${user.email ?? "-"}</td>
+
+                    <td>${user.phone ?? "-"}</td>
+
+                    <td>
+                        <span class="badge ${getRoleClass(role)}">
+                            ${role}
+                        </span>
+                    </td>
+
+                    <td>${user.language ?? "-"}</td>
+
+                    <td>
+                        ${locationPermission}
+                    </td>
+
+                    <td>${created}</td>
+
+                    <td>
+                        <select
+                            id="role-${user.id}"
+                            class="form-control"
+                        >
+                            <option value="CUSTOMER"
+                                ${role === "CUSTOMER" ? "selected" : ""}>
+                                CUSTOMER
+                            </option>
+
+                            <option value="ENTREPRENEUR"
+                                ${role === "ENTREPRENEUR" ? "selected" : ""}>
+                                ENTREPRENEUR
+                            </option>
+
+                            <option value="ADMIN"
+                                ${role === "ADMIN" ? "selected" : ""}>
+                                ADMIN
+                            </option>
+                        </select>
+
+                        <button
+                            class="btn btn-primary"
+                            onclick="updateRole(${user.id})"
+                        >
+                            Update
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+    } catch (error) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="9">
+                    Failed to load users: ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function getRoleClass(role) {
+    if (role === "ADMIN") {
+        return "badge-danger";
+    }
+
+    if (role === "ENTREPRENEUR") {
+        return "badge-warning";
+    }
+
+    return "badge-success";
+}
+
+async function updateRole(userId) {
+
+    const select = document.getElementById(`role-${userId}`);
+
+    const role = select.value;
+
+    if (!confirm(`Change user ${userId} role to ${role}?`)) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(`/admin/users/${userId}/role`, {
+            method: "PUT",
+            body: JSON.stringify({
+                role: role
+            })
+        });
+
+        showMessage(
+            "User role updated successfully.",
+            "success"
+        );
+
+        await loadUsers();
+
+    } catch (error) {
+
+        showMessage(
+            error.message,
+            "error"
+        );
+    }
+}
+
+function showMessage(message, type) {
+
+    const element = document.getElementById("message");
+
+    element.innerHTML = `
+        <div class="alert ${type}">
+            ${message}
+        </div>
+    `;
+
+    setTimeout(() => {
+        element.innerHTML = "";
+    }, 3000);
+}
+
+loadUsers();
+</script>
+
+</body>
+</html>

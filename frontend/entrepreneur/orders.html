@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container navbar-inner">
+        <a href="../index.html" class="logo">Hunar<span>Hub</span></a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profile.html">Profile</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="earnings.html">Earnings</a>
+            <button onclick="logout()" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="container">
+
+        <div class="dashboard-header">
+            <div>
+                <h1>Customer Orders</h1>
+                <p>View and manage orders received from customers.</p>
+            </div>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="orderTableBody">
+                    <tr>
+                        <td colspan="6">Loading orders...</td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+
+<script>
+
+async function loadOrders() {
+
+    const tableBody = document.getElementById("orderTableBody");
+
+    try {
+
+        const result = await apiRequest("/entrepreneur/orders");
+
+        const orders = result.orders || result;
+
+        tableBody.innerHTML = "";
+
+        if (!Array.isArray(orders) || orders.length === 0) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        No orders found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        orders.forEach(order => {
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${order.id ?? order.order_id ?? "-"}</td>
+
+                <td>
+                    ${order.customer_name ??
+                    order.customer ??
+                    order.customer_id ??
+                    "-"}
+                </td>
+
+                <td>
+                    ₹${order.total_amount ?? order.total ?? "0"}
+                </td>
+
+                <td>
+                    <span class="badge">
+                        ${order.status ?? "PENDING"}
+                    </span>
+                </td>
+
+                <td>
+                    ${order.created_at ?? "-"}
+                </td>
+
+                <td>
+
+                    <select
+                        onchange="updateOrderStatus(
+                            ${order.id ?? order.order_id},
+                            this.value
+                        )">
+
+                        <option value="PENDING"
+                            ${order.status === "PENDING" ? "selected" : ""}>
+                            Pending
+                        </option>
+
+                        <option value="CONFIRMED"
+                            ${order.status === "CONFIRMED" ? "selected" : ""}>
+                            Confirmed
+                        </option>
+
+                        <option value="COMPLETED"
+                            ${order.status === "COMPLETED" ? "selected" : ""}>
+                            Completed
+                        </option>
+
+                        <option value="CANCELLED"
+                            ${order.status === "CANCELLED" ? "selected" : ""}>
+                            Cancelled
+                        </option>
+
+                    </select>
+
+                </td>
+            `;
+
+            tableBody.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    ${error.message}
+                </td>
+            </tr>
+        `;
+
+    }
+}
+
+
+async function updateOrderStatus(orderId, status) {
+
+    try {
+
+        await apiRequest(
+            `/entrepreneur/orders/${orderId}`,
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    status: status
+                })
+            }
+        );
+
+        alert("Order status updated successfully.");
+
+        loadOrders();
+
+    } catch (error) {
+
+        alert(error.message);
+
+        loadOrders();
+
+    }
+
+}
+
+
+loadOrders();
+
+</script>
+
+</body>
+</html>

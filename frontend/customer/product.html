@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container navbar-inner">
+        <a href="../index.html" class="logo">Hunar<span>Hub</span></a>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Services</a>
+            <a href="profile.html">Profile</a>
+            <button onclick="logout()" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="container">
+        <a href="marketplace.html" class="btn btn-outline">← Back to Marketplace</a>
+
+        <div id="productContainer" style="margin-top:30px;">
+            <div class="card">Loading product...</div>
+        </div>
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+
+<script>
+const productId =
+    new URLSearchParams(window.location.search).get("id");
+
+async function loadProduct() {
+    const container = document.getElementById("productContainer");
+
+    if (!productId) {
+        container.innerHTML = `
+            <div class="card">
+                <h3>Product not selected</h3>
+            </div>
+        `;
+        return;
+    }
+
+    try {
+        const result = await apiRequest(
+            "/customer/products/" + productId
+        );
+
+        const product = result.product || result;
+
+        container.innerHTML = `
+            <div class="card">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:35px;">
+
+                    <div class="product-image" style="height:350px;">
+                        ${product.image_url
+                            ? `<img src="${product.image_url}" style="width:100%;height:100%;object-fit:cover;">`
+                            : "🛍️"}
+                    </div>
+
+                    <div>
+                        <h1>${product.name || "Product"}</h1>
+
+                        <p style="margin:20px 0;">
+                            ${product.description || "No description available."}
+                        </p>
+
+                        <p class="price">
+                            ₹${product.price || 0}
+                        </p>
+
+                        <p style="margin-top:15px;">
+                            Available Stock:
+                            <strong>${product.stock ?? 0}</strong>
+                        </p>
+
+                        <div class="form-group" style="margin-top:25px;">
+                            <label>Quantity</label>
+                            <input
+                                type="number"
+                                id="quantity"
+                                value="1"
+                                min="1"
+                                max="${product.stock || 1}"
+                            >
+                        </div>
+
+                        <button
+                            onclick="placeOrder()"
+                            class="btn btn-primary"
+                        >
+                            Place Order
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        `;
+
+    } catch (error) {
+        container.innerHTML = `
+            <div class="card">
+                <h3>Unable to load product</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+async function placeOrder() {
+    const quantity =
+        Number(document.getElementById("quantity").value);
+
+    if (!quantity || quantity < 1) {
+        alert("Enter a valid quantity.");
+        return;
+    }
+
+    try {
+        await apiRequest("/customer/orders", {
+            method: "POST",
+            body: JSON.stringify({
+                product_id: Number(productId),
+                quantity: quantity
+            })
+        });
+
+        alert("Order placed successfully.");
+        window.location.href = "orders.html";
+
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+loadProduct();
+</script>
+
+</body>
+</html>

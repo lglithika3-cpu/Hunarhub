@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Management | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-content">
+        <a href="dashboard.html" class="logo">HunarHub</a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="entrepreneurs.html">Entrepreneurs</a>
+            <a href="categories.html">Categories</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="reviews.html">Reviews</a>
+            <a href="reports.html">Reports</a>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<section class="page-header">
+    <div class="container">
+        <h1>Service Management</h1>
+        <p>Manage services offered by local entrepreneurs.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        <div id="message"></div>
+
+        <div class="card">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>Marketplace Services</h2>
+                    <p>Monitor and manage service availability.</p>
+                </div>
+
+                <button
+                    class="btn btn-primary"
+                    onclick="loadServices()"
+                >
+                    Refresh
+                </button>
+
+            </div>
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Service</th>
+                            <th>Entrepreneur</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Estimated Time</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="servicesTable">
+                        <tr>
+                            <td colspan="8">
+                                Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<script src="../js/app.js"></script>
+
+<script>
+async function loadServices() {
+
+    const table =
+        document.getElementById("servicesTable");
+
+    try {
+
+        const data =
+            await apiRequest("/admin/services");
+
+        const services =
+            Array.isArray(data)
+                ? data
+                : data.services || data.data || [];
+
+        if (!services.length) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="8">
+                        No services found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        table.innerHTML =
+            services.map(service => {
+
+                const status =
+                    String(
+                        service.status || "ACTIVE"
+                    ).toUpperCase();
+
+                return `
+                    <tr>
+
+                        <td>${service.id ?? "-"}</td>
+
+                        <td>
+                            <strong>
+                                ${service.name ?? "-"}
+                            </strong>
+                        </td>
+
+                        <td>
+                            ${service.business_name
+                                ?? service.entrepreneur_name
+                                ?? service.user_name
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ${service.category_name ?? "-"}
+                        </td>
+
+                        <td>
+                            ₹${service.price ?? "0"}
+                        </td>
+
+                        <td>
+                            ${service.estimated_time ?? "-"}
+                        </td>
+
+                        <td>
+                            <span class="badge">
+                                ${status}
+                            </span>
+                        </td>
+
+                        <td>
+
+                            <select
+                                id="status-${service.id}"
+                                class="form-control"
+                            >
+
+                                <option value="ACTIVE"
+                                    ${status === "ACTIVE"
+                                        ? "selected"
+                                        : ""}>
+                                    ACTIVE
+                                </option>
+
+                                <option value="INACTIVE"
+                                    ${status === "INACTIVE"
+                                        ? "selected"
+                                        : ""}>
+                                    INACTIVE
+                                </option>
+
+                            </select>
+
+                            <button
+                                class="btn btn-primary"
+                                onclick="updateService(${service.id})"
+                            >
+                                Update
+                            </button>
+
+                        </td>
+
+                    </tr>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+async function updateService(id) {
+
+    const status =
+        document
+            .getElementById(`status-${id}`)
+            .value;
+
+    try {
+
+        await apiRequest(
+            `/admin/services/${id}/status`,
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    status: status
+                })
+            }
+        );
+
+        showMessage(
+            "Service status updated.",
+            "success"
+        );
+
+        loadServices();
+
+    } catch (error) {
+
+        showMessage(
+            error.message,
+            "error"
+        );
+    }
+}
+
+function showMessage(message, type) {
+
+    document.getElementById("message").innerHTML = `
+        <div class="alert ${type}">
+            ${message}
+        </div>
+    `;
+
+    setTimeout(() => {
+        document.getElementById("message").innerHTML = "";
+    }, 3000);
+}
+
+loadServices();
+</script>
+
+</body>
+</html>

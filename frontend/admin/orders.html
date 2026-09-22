@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-content">
+        <a href="dashboard.html" class="logo">HunarHub</a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="entrepreneurs.html">Entrepreneurs</a>
+            <a href="categories.html">Categories</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="reviews.html">Reviews</a>
+            <a href="reports.html">Reports</a>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<section class="page-header">
+    <div class="container">
+        <h1>Order Management</h1>
+        <p>Monitor marketplace orders and their progress.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        <div id="message"></div>
+
+        <div class="card">
+
+            <div class="section-header">
+                <div>
+                    <h2>Orders</h2>
+                    <p>View and update order status.</p>
+                </div>
+
+                <button
+                    class="btn btn-primary"
+                    onclick="loadOrders()"
+                >
+                    Refresh
+                </button>
+            </div>
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Entrepreneur</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="ordersTable">
+                        <tr>
+                            <td colspan="7">
+                                Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<script src="../js/app.js"></script>
+
+<script>
+async function loadOrders() {
+
+    const table =
+        document.getElementById("ordersTable");
+
+    try {
+
+        const data =
+            await apiRequest("/admin/orders");
+
+        const orders =
+            Array.isArray(data)
+                ? data
+                : data.orders || data.data || [];
+
+        if (!orders.length) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        No orders found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        table.innerHTML =
+            orders.map(order => {
+
+                const status =
+                    String(
+                        order.status || "PENDING"
+                    ).toUpperCase();
+
+                const created =
+                    order.created_at
+                        ? new Date(
+                            order.created_at
+                        ).toLocaleDateString()
+                        : "-";
+
+                return `
+                    <tr>
+
+                        <td>
+                            #${order.id ?? "-"}
+                        </td>
+
+                        <td>
+                            ${order.customer_name
+                                ?? order.customer
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ${order.business_name
+                                ?? order.entrepreneur_name
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ₹${order.total_amount ?? "0"}
+                        </td>
+
+                        <td>
+                            <span class="badge">
+                                ${status}
+                            </span>
+                        </td>
+
+                        <td>
+                            ${created}
+                        </td>
+
+                        <td>
+
+                            <select
+                                id="status-${order.id}"
+                                class="form-control"
+                            >
+
+                                <option value="PENDING"
+                                    ${status === "PENDING"
+                                        ? "selected"
+                                        : ""}>
+                                    PENDING
+                                </option>
+
+                                <option value="CONFIRMED"
+                                    ${status === "CONFIRMED"
+                                        ? "selected"
+                                        : ""}>
+                                    CONFIRMED
+                                </option>
+
+                                <option value="COMPLETED"
+                                    ${status === "COMPLETED"
+                                        ? "selected"
+                                        : ""}>
+                                    COMPLETED
+                                </option>
+
+                                <option value="CANCELLED"
+                                    ${status === "CANCELLED"
+                                        ? "selected"
+                                        : ""}>
+                                    CANCELLED
+                                </option>
+
+                            </select>
+
+                            <button
+                                class="btn btn-primary"
+                                onclick="updateOrder(${order.id})"
+                            >
+                                Update
+                            </button>
+
+                        </td>
+
+                    </tr>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+async function updateOrder(id) {
+
+    const status =
+        document
+            .getElementById(`status-${id}`)
+            .value;
+
+    try {
+
+        await apiRequest(
+            `/admin/orders/${id}/status`,
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    status: status
+                })
+            }
+        );
+
+        showMessage(
+            "Order status updated.",
+            "success"
+        );
+
+        loadOrders();
+
+    } catch (error) {
+
+        showMessage(
+            error.message,
+            "error"
+        );
+    }
+}
+
+function showMessage(message, type) {
+
+    document.getElementById("message").innerHTML = `
+        <div class="alert ${type}">
+            ${message}
+        </div>
+    `;
+
+    setTimeout(() => {
+        document.getElementById("message").innerHTML = "";
+    }, 3000);
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>

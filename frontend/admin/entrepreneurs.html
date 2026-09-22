@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrepreneur Verification | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-content">
+        <a href="dashboard.html" class="logo">HunarHub</a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="entrepreneurs.html">Entrepreneurs</a>
+            <a href="categories.html">Categories</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="reviews.html">Reviews</a>
+            <a href="reports.html">Reports</a>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<section class="page-header">
+    <div class="container">
+        <h1>Entrepreneur Verification</h1>
+        <p>Review and manage local entrepreneur verification status.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        <div id="message"></div>
+
+        <div class="card">
+            <div class="section-header">
+                <div>
+                    <h2>Entrepreneurs</h2>
+                    <p>Review local businesses and manage verification.</p>
+                </div>
+
+                <button class="btn btn-primary" onclick="loadEntrepreneurs()">
+                    Refresh
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Business</th>
+                            <th>User</th>
+                            <th>Skill</th>
+                            <th>Experience</th>
+                            <th>Area</th>
+                            <th>Availability</th>
+                            <th>Verification</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="entrepreneursTable">
+                        <tr>
+                            <td colspan="9">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<script src="../js/app.js"></script>
+
+<script>
+async function loadEntrepreneurs() {
+    const table = document.getElementById("entrepreneursTable");
+
+    table.innerHTML = `
+        <tr>
+            <td colspan="9">Loading entrepreneurs...</td>
+        </tr>
+    `;
+
+    try {
+        const data = await apiRequest("/admin/entrepreneurs");
+
+        const entrepreneurs = Array.isArray(data)
+            ? data
+            : data.entrepreneurs || data.data || [];
+
+        if (!entrepreneurs.length) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="9">No entrepreneurs found.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        table.innerHTML = entrepreneurs.map(item => {
+            const status = String(
+                item.verification_status || "PENDING"
+            ).toUpperCase();
+
+            return `
+                <tr>
+                    <td>${item.id ?? "-"}</td>
+
+                    <td>
+                        <strong>
+                            ${item.business_name ?? "-"}
+                        </strong>
+                    </td>
+
+                    <td>
+                        ${item.user_name ?? item.name ?? "-"}
+                    </td>
+
+                    <td>
+                        ${item.skill_description ?? "-"}
+                    </td>
+
+                    <td>
+                        ${item.experience ?? "-"}
+                    </td>
+
+                    <td>
+                        ${item.address_area ?? "-"}
+                    </td>
+
+                    <td>
+                        ${item.availability_status
+                            ? "Available"
+                            : "Unavailable"}
+                    </td>
+
+                    <td>
+                        <span class="badge">
+                            ${status}
+                        </span>
+                    </td>
+
+                    <td>
+                        <select
+                            id="verification-${item.id}"
+                            class="form-control"
+                        >
+                            <option value="PENDING"
+                                ${status === "PENDING" ? "selected" : ""}>
+                                PENDING
+                            </option>
+
+                            <option value="VERIFIED"
+                                ${status === "VERIFIED" ? "selected" : ""}>
+                                VERIFIED
+                            </option>
+
+                            <option value="REJECTED"
+                                ${status === "REJECTED" ? "selected" : ""}>
+                                REJECTED
+                            </option>
+                        </select>
+
+                        <button
+                            class="btn btn-primary"
+                            onclick="updateVerification(${item.id})"
+                        >
+                            Update
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+    } catch (error) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="9">
+                    ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+async function updateVerification(id) {
+    const status =
+        document.getElementById(`verification-${id}`).value;
+
+    try {
+        await apiRequest(
+            `/admin/entrepreneurs/${id}/verification`,
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    verification_status: status
+                })
+            }
+        );
+
+        showMessage(
+            "Entrepreneur verification updated successfully.",
+            "success"
+        );
+
+        await loadEntrepreneurs();
+
+    } catch (error) {
+        showMessage(
+            error.message,
+            "error"
+        );
+    }
+}
+
+function showMessage(message, type) {
+    document.getElementById("message").innerHTML = `
+        <div class="alert ${type}">
+            ${message}
+        </div>
+    `;
+
+    setTimeout(() => {
+        document.getElementById("message").innerHTML = "";
+    }, 3000);
+}
+
+loadEntrepreneurs();
+</script>
+
+</body>
+</html>

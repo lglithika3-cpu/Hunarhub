@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Requests | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container nav-content">
+        <a href="dashboard.html" class="logo">HunarHub</a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="users.html">Users</a>
+            <a href="entrepreneurs.html">Entrepreneurs</a>
+            <a href="categories.html">Categories</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="reviews.html">Reviews</a>
+            <a href="reports.html">Reports</a>
+            <button onclick="logout()" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<section class="page-header">
+    <div class="container">
+        <h1>Service Request Management</h1>
+        <p>Monitor customer requests for local services.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+
+        <div id="message"></div>
+
+        <div class="card">
+
+            <div class="section-header">
+
+                <div>
+                    <h2>Service Requests</h2>
+                    <p>View and update service request status.</p>
+                </div>
+
+                <button
+                    class="btn btn-primary"
+                    onclick="loadRequests()"
+                >
+                    Refresh
+                </button>
+
+            </div>
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Entrepreneur</th>
+                            <th>Service</th>
+                            <th>Preferred Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="requestsTable">
+                        <tr>
+                            <td colspan="7">
+                                Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+<script src="../js/app.js"></script>
+
+<script>
+async function loadRequests() {
+
+    const table =
+        document.getElementById("requestsTable");
+
+    try {
+
+        const data =
+            await apiRequest("/admin/service-requests");
+
+        const requests =
+            Array.isArray(data)
+                ? data
+                : data.service_requests
+                    || data.requests
+                    || data.data
+                    || [];
+
+        if (!requests.length) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        No service requests found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        table.innerHTML =
+            requests.map(request => {
+
+                const status =
+                    String(
+                        request.status || "PENDING"
+                    ).toUpperCase();
+
+                return `
+                    <tr>
+
+                        <td>
+                            #${request.id ?? "-"}
+                        </td>
+
+                        <td>
+                            ${request.customer_name
+                                ?? request.customer
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ${request.business_name
+                                ?? request.entrepreneur_name
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ${request.service_name
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            ${request.preferred_date
+                                ?? "-"}
+                        </td>
+
+                        <td>
+                            <span class="badge">
+                                ${status}
+                            </span>
+                        </td>
+
+                        <td>
+
+                            <select
+                                id="status-${request.id}"
+                                class="form-control"
+                            >
+
+                                <option value="PENDING"
+                                    ${status === "PENDING"
+                                        ? "selected"
+                                        : ""}>
+                                    PENDING
+                                </option>
+
+                                <option value="ACCEPTED"
+                                    ${status === "ACCEPTED"
+                                        ? "selected"
+                                        : ""}>
+                                    ACCEPTED
+                                </option>
+
+                                <option value="REJECTED"
+                                    ${status === "REJECTED"
+                                        ? "selected"
+                                        : ""}>
+                                    REJECTED
+                                </option>
+
+                                <option value="COMPLETED"
+                                    ${status === "COMPLETED"
+                                        ? "selected"
+                                        : ""}>
+                                    COMPLETED
+                                </option>
+
+                                <option value="CANCELLED"
+                                    ${status === "CANCELLED"
+                                        ? "selected"
+                                        : ""}>
+                                    CANCELLED
+                                </option>
+
+                            </select>
+
+                            <button
+                                class="btn btn-primary"
+                                onclick="updateRequest(${request.id})"
+                            >
+                                Update
+                            </button>
+
+                        </td>
+
+                    </tr>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+async function updateRequest(id) {
+
+    const status =
+        document
+            .getElementById(`status-${id}`)
+            .value;
+
+    try {
+
+        await apiRequest(
+            `/admin/service-requests/${id}/status`,
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    status: status
+                })
+            }
+        );
+
+        showMessage(
+            "Service request status updated.",
+            "success"
+        );
+
+        loadRequests();
+
+    } catch (error) {
+
+        showMessage(
+            error.message,
+            "error"
+        );
+    }
+}
+
+function showMessage(message, type) {
+
+    document.getElementById("message").innerHTML = `
+        <div class="alert ${type}">
+            ${message}
+        </div>
+    `;
+
+    setTimeout(() => {
+        document.getElementById("message").innerHTML = "";
+    }, 3000);
+}
+
+loadRequests();
+</script>
+
+</body>
+</html>

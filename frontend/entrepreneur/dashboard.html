@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrepreneur Dashboard | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container navbar-inner">
+        <a href="../index.html" class="logo">Hunar<span>Hub</span></a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profile.html">Profile</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="earnings.html">Earnings</a>
+            <button onclick="logout()" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="container">
+
+        <div class="dashboard-header">
+            <div>
+                <h1 id="welcomeTitle">Entrepreneur Dashboard</h1>
+                <p>Manage your local business, products, services and orders.</p>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+                <h3>Products</h3>
+                <p id="productCount">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Services</h3>
+                <p id="serviceCount">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Orders</h3>
+                <p id="orderCount">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Service Requests</h3>
+                <p id="requestCount">0</p>
+            </div>
+
+        </div>
+
+        <div class="section">
+
+            <div class="section-header">
+                <h2>Business Overview</h2>
+            </div>
+
+            <div class="card">
+                <p>
+                    Welcome to your HunarHub entrepreneur workspace.
+                    Manage your products and services, respond to customers,
+                    and track your earnings from one place.
+                </p>
+
+                <div class="quick-actions">
+
+                    <a href="products.html" class="btn btn-primary">
+                        Manage Products
+                    </a>
+
+                    <a href="services.html" class="btn btn-primary">
+                        Manage Services
+                    </a>
+
+                    <a href="orders.html" class="btn btn-outline">
+                        View Orders
+                    </a>
+
+                    <a href="service-requests.html" class="btn btn-outline">
+                        View Requests
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="section">
+
+            <div class="section-header">
+                <h2>Account Status</h2>
+            </div>
+
+            <div class="card">
+
+                <p>
+                    <strong>Business:</strong>
+                    <span id="businessName">Loading...</span>
+                </p>
+
+                <p>
+                    <strong>Verification:</strong>
+                    <span id="verificationStatus">Loading...</span>
+                </p>
+
+                <p>
+                    <strong>Availability:</strong>
+                    <span id="availabilityStatus">Loading...</span>
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+
+<script>
+async function loadDashboard() {
+
+    try {
+
+        const result = await apiRequest("/entrepreneur/dashboard");
+
+        const data = result.dashboard || result;
+
+        document.getElementById("welcomeTitle").textContent =
+            `Welcome, ${data.name || data.business_name || "Entrepreneur"}`;
+
+        document.getElementById("productCount").textContent =
+            data.product_count ?? data.products_count ?? 0;
+
+        document.getElementById("serviceCount").textContent =
+            data.service_count ?? data.services_count ?? 0;
+
+        document.getElementById("orderCount").textContent =
+            data.order_count ?? data.orders_count ?? 0;
+
+        document.getElementById("requestCount").textContent =
+            data.service_request_count ??
+            data.requests_count ??
+            0;
+
+        document.getElementById("businessName").textContent =
+            data.business_name || "Not added";
+
+        document.getElementById("verificationStatus").textContent =
+            data.verification_status || "PENDING";
+
+        document.getElementById("availabilityStatus").textContent =
+            data.availability_status ? "Available" : "Unavailable";
+
+    } catch (error) {
+
+        document.getElementById("welcomeTitle").textContent =
+            "Entrepreneur Dashboard";
+
+        console.error(error);
+
+    }
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

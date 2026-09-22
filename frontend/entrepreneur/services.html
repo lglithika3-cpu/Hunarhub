@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Services | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container navbar-inner">
+        <a href="../index.html" class="logo">Hunar<span>Hub</span></a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profile.html">Profile</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="earnings.html">Earnings</a>
+            <button onclick="logout()" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="container">
+
+        <div class="dashboard-header">
+            <div>
+                <h1>My Services</h1>
+                <p>Manage the services you provide to local customers.</p>
+            </div>
+        </div>
+
+        <div class="card">
+
+            <h2>Add New Service</h2>
+
+            <form id="serviceForm">
+
+                <div class="form-group">
+                    <label>Service Name</label>
+                    <input type="text" id="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="description" rows="4"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Price</label>
+                    <input type="number" id="price" min="0" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Estimated Time</label>
+                    <input
+                        type="text"
+                        id="estimated_time"
+                        placeholder="Example: 3 Days"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label>Category ID</label>
+                    <input type="number" id="category_id" min="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Availability</label>
+                    <select id="availability">
+                        <option value="1">Available</option>
+                        <option value="0">Not Available</option>
+                    </select>
+                </div>
+
+                <div id="serviceMessage"></div>
+
+                <button type="submit" class="btn btn-primary">
+                    Add Service
+                </button>
+
+            </form>
+
+        </div>
+
+        <div class="section">
+
+            <div class="section-header">
+                <h2>My Service List</h2>
+            </div>
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Service</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Estimated Time</th>
+                            <th>Availability</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="serviceTableBody">
+                        <tr>
+                            <td colspan="8">Loading services...</td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+
+<script>
+
+async function loadServices() {
+
+    const tableBody = document.getElementById("serviceTableBody");
+
+    try {
+
+        const result = await apiRequest("/entrepreneur/services");
+
+        const services = result.services || result;
+
+        tableBody.innerHTML = "";
+
+        if (!Array.isArray(services) || services.length === 0) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8">
+                        No services found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        services.forEach(service => {
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${service.id ?? "-"}</td>
+
+                <td>
+                    <strong>${service.name ?? "-"}</strong>
+                    <br>
+                    <small>${service.description ?? ""}</small>
+                </td>
+
+                <td>
+                    ${service.category_name ?? service.category_id ?? "-"}
+                </td>
+
+                <td>
+                    ₹${service.price ?? "0"}
+                </td>
+
+                <td>
+                    ${service.estimated_time ?? "-"}
+                </td>
+
+                <td>
+                    ${service.availability ? "Available" : "Not Available"}
+                </td>
+
+                <td>
+                    <span class="badge">
+                        ${service.status ?? "ACTIVE"}
+                    </span>
+                </td>
+
+                <td>
+                    <button
+                        class="btn btn-outline"
+                        onclick="deleteService(${service.id})">
+                        Deactivate
+                    </button>
+                </td>
+            `;
+
+            tableBody.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    ${error.message}
+                </td>
+            </tr>
+        `;
+
+    }
+}
+
+
+document.getElementById("serviceForm").addEventListener(
+    "submit",
+    async function(event) {
+
+        event.preventDefault();
+
+        const message = document.getElementById("serviceMessage");
+
+        const data = {
+
+            name:
+                document.getElementById("name").value.trim(),
+
+            description:
+                document.getElementById("description").value.trim(),
+
+            price:
+                Number(document.getElementById("price").value),
+
+            estimated_time:
+                document.getElementById("estimated_time").value.trim(),
+
+            category_id:
+                Number(document.getElementById("category_id").value),
+
+            availability:
+                Number(document.getElementById("availability").value)
+
+        };
+
+        try {
+
+            await apiRequest("/entrepreneur/services", {
+
+                method: "POST",
+
+                body: JSON.stringify(data)
+
+            });
+
+            message.innerHTML = `
+                <p class="success-message">
+                    Service added successfully.
+                </p>
+            `;
+
+            document.getElementById("serviceForm").reset();
+
+            loadServices();
+
+        } catch (error) {
+
+            message.innerHTML = `
+                <p class="error-message">
+                    ${error.message}
+                </p>
+            `;
+
+        }
+
+    }
+);
+
+
+async function deleteService(serviceId) {
+
+    const confirmed = confirm(
+        "Are you sure you want to deactivate this service?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(
+            `/entrepreneur/services/${serviceId}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        loadServices();
+
+    } catch (error) {
+
+        alert(error.message);
+
+    }
+
+}
+
+
+loadServices();
+
+</script>
+
+</body>
+</html>

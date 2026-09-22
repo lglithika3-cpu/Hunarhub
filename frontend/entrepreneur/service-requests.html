@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Requests | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container navbar-inner">
+        <a href="../index.html" class="logo">Hunar<span>Hub</span></a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="profile.html">Profile</a>
+            <a href="products.html">Products</a>
+            <a href="services.html">Services</a>
+            <a href="orders.html">Orders</a>
+            <a href="service-requests.html">Requests</a>
+            <a href="earnings.html">Earnings</a>
+            <button onclick="logout()" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="container">
+
+        <div class="dashboard-header">
+            <div>
+                <h1>Service Requests</h1>
+                <p>View and manage service requests from customers.</p>
+            </div>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Customer</th>
+                        <th>Service</th>
+                        <th>Preferred Date</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="requestTableBody">
+                    <tr>
+                        <td colspan="7">Loading service requests...</td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+
+<script>
+
+async function loadRequests() {
+
+    const tableBody =
+        document.getElementById("requestTableBody");
+
+    try {
+
+        const result =
+            await apiRequest("/entrepreneur/service-requests");
+
+        const requests =
+            result.service_requests ||
+            result.requests ||
+            result;
+
+        tableBody.innerHTML = "";
+
+        if (!Array.isArray(requests) || requests.length === 0) {
+
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        No service requests found.
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+        requests.forEach(request => {
+
+            const requestId =
+                request.id ??
+                request.request_id;
+
+            const status =
+                request.status ??
+                "PENDING";
+
+            const row =
+                document.createElement("tr");
+
+            row.innerHTML = `
+
+                <td>
+                    ${requestId ?? "-"}
+                </td>
+
+                <td>
+                    ${request.customer_name ??
+                    request.customer ??
+                    request.customer_id ??
+                    "-"}
+                </td>
+
+                <td>
+                    ${request.service_name ??
+                    request.service ??
+                    request.service_id ??
+                    "-"}
+                </td>
+
+                <td>
+                    ${request.preferred_date ?? "-"}
+                </td>
+
+                <td>
+                    ${request.request_description ?? "-"}
+                </td>
+
+                <td>
+                    <span class="badge">
+                        ${status}
+                    </span>
+                </td>
+
+                <td>
+
+                    <select
+                        onchange="updateRequestStatus(
+                            ${requestId},
+                            this.value
+                        )">
+
+                        <option value="PENDING"
+                            ${status === "PENDING"
+                            ? "selected"
+                            : ""}>
+                            Pending
+                        </option>
+
+                        <option value="ACCEPTED"
+                            ${status === "ACCEPTED"
+                            ? "selected"
+                            : ""}>
+                            Accepted
+                        </option>
+
+                        <option value="REJECTED"
+                            ${status === "REJECTED"
+                            ? "selected"
+                            : ""}>
+                            Rejected
+                        </option>
+
+                        <option value="COMPLETED"
+                            ${status === "COMPLETED"
+                            ? "selected"
+                            : ""}>
+                            Completed
+                        </option>
+
+                        <option value="CANCELLED"
+                            ${status === "CANCELLED"
+                            ? "selected"
+                            : ""}>
+                            Cancelled
+                        </option>
+
+                    </select>
+
+                </td>
+            `;
+
+            tableBody.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    ${error.message}
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
+
+
+async function updateRequestStatus(
+    requestId,
+    status
+) {
+
+    try {
+
+        await apiRequest(
+            `/entrepreneur/service-requests/${requestId}`,
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    status: status
+                })
+            }
+        );
+
+        alert(
+            "Service request status updated successfully."
+        );
+
+        loadRequests();
+
+    } catch (error) {
+
+        alert(error.message);
+
+        loadRequests();
+
+    }
+
+}
+
+
+loadRequests();
+
+</script>
+
+</body>
+</html>

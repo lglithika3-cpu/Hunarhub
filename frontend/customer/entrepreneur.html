@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrepreneur | HunarHub</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container navbar-inner">
+        <a href="../index.html" class="logo">Hunar<span>Hub</span></a>
+
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="orders.html">Orders</a>
+            <a href="profile.html">Profile</a>
+            <button onclick="logout()" class="btn btn-outline">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<main class="dashboard">
+    <div class="container">
+
+        <a href="marketplace.html" class="btn btn-outline">
+            ← Back to Marketplace
+        </a>
+
+        <div id="profileContainer" style="margin-top:30px;">
+            <div class="card">Loading entrepreneur...</div>
+        </div>
+
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+
+<script>
+const entrepreneurId =
+    new URLSearchParams(window.location.search)
+    .get("id");
+
+async function loadEntrepreneur() {
+
+    const container =
+        document.getElementById("profileContainer");
+
+    if (!entrepreneurId) {
+        container.innerHTML = `
+            <div class="card">
+                <h3>Entrepreneur not selected</h3>
+            </div>
+        `;
+        return;
+    }
+
+    try {
+
+        const result =
+            await apiRequest(
+                "/customer/entrepreneur/" + entrepreneurId
+            );
+
+        const entrepreneur =
+            result.entrepreneur || result;
+
+        const visibility =
+            entrepreneur.location_visibility || "HIDDEN";
+
+        let locationText =
+            "Location hidden for privacy.";
+
+        if (visibility === "AREA_ONLY") {
+            locationText =
+                entrepreneur.address_area ||
+                "General area available.";
+        }
+
+        if (visibility === "EXACT") {
+            locationText =
+                entrepreneur.address_area ||
+                "Location available.";
+        }
+
+        container.innerHTML = `
+            <div class="card">
+
+                <h1>
+                    ${entrepreneur.business_name ||
+                    "Local Entrepreneur"}
+                </h1>
+
+                <p style="margin-top:10px;">
+                    ${entrepreneur.bio || "Local business on HunarHub."}
+                </p>
+
+                <div style="margin-top:20px;">
+
+                    <p>
+                        <strong>Skills:</strong>
+                        ${entrepreneur.skill_description || "-"}
+                    </p>
+
+                    <p>
+                        <strong>Experience:</strong>
+                        ${entrepreneur.experience || "-"}
+                    </p>
+
+                    <p>
+                        <strong>Location:</strong>
+                        ${locationText}
+                    </p>
+
+                    <p>
+                        <strong>Availability:</strong>
+                        ${
+                            entrepreneur.availability_status
+                            ? "Available"
+                            : "Currently unavailable"
+                        }
+                    </p>
+
+                    <p class="verification" style="margin-top:15px;">
+                        ${
+                            entrepreneur.verification_status === "VERIFIED"
+                            ? "✓ Verified Entrepreneur"
+                            : "Verification pending"
+                        }
+                    </p>
+
+                </div>
+
+            </div>
+        `;
+
+    } catch (error) {
+
+        container.innerHTML = `
+            <div class="card">
+                <h3>Unable to load entrepreneur</h3>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+loadEntrepreneur();
+</script>
+
+</body>
+</html>

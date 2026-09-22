@@ -7,3 +7,5 @@ __pycache__/
 *.log
 frontend/admin_backup/
 frontend/entrepreneur_backup/
+
+hunarhub_backup.sql

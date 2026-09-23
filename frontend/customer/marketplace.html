@@ -150,29 +150,39 @@ function filterProducts() {
     const search = document
         .getElementById("search")
         .value
+        .trim()
         .toLowerCase();
 
-    const category = document
-        .getElementById("categoryFilter")
-        .value
-        .toLowerCase();
+    const categorySelect = document.getElementById("categoryFilter");
+
+    const category = String(
+        categorySelect.value || ""
+    ).trim().toLowerCase();
 
     const filtered = products.filter(product => {
 
-        const name = String(product.name || "").toLowerCase();
-        const description = String(product.description || "").toLowerCase();
+        const name = String(
+            product.name || ""
+        ).trim().toLowerCase();
+
+        const description = String(
+            product.description || ""
+        ).trim().toLowerCase();
+
         const productCategory = String(
             product.category_name ||
             product.category ||
             ""
-        ).toLowerCase();
+        ).trim().toLowerCase();
 
         const matchesSearch =
+            !search ||
             name.includes(search) ||
             description.includes(search);
 
         const matchesCategory =
             !category ||
+            category === "all categories" ||
             productCategory === category;
 
         return matchesSearch && matchesCategory;

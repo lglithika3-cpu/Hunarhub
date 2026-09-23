@@ -1,4 +1,4 @@
-﻿from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request
 from flask_login import current_user
 from backend.database import db
 from backend.security.roles import role_required
@@ -38,7 +38,8 @@ def products():
             "category_id": p.category_id,
             "entrepreneur_id": p.entrepreneur_id,
             "stock": p.stock,
-            "status": p.status
+            "status": p.status,
+            "image_url": f"/{p.image_url.lstrip('/')}" if p.image_url else None
         }
         for p in products
     ]), 200

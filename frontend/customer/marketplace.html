@@ -78,7 +78,7 @@ async function loadProducts() {
     const grid = document.getElementById("productGrid");
 
     try {
-        const result = await apiRequest("/customer/products");
+        const result = await apiRequest("/api/customer/products");
 
         products = Array.isArray(result)
             ? result

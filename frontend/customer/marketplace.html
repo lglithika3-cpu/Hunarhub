@@ -74,6 +74,31 @@
 <script>
 let products = [];
 
+const categoryDefinitions = [{"name": "Tailor", "id": 1}, {"name": "Potter", "id": 2}, {"name": "Cobbler", "id": 3}, {"name": "Artisan", "id": 4}, {"name": "Handmade Products", "id": 5}, {"name": "Local Vendor", "id": 6}];
+
+function setupCategoryFilter() {
+    const categoryFilter = document.getElementById("categoryFilter");
+
+    if (!categoryFilter) {
+        console.error("categoryFilter element not found.");
+        return;
+    }
+
+    categoryFilter.innerHTML =
+        '<option value="">All Categories</option>' +
+        categoryDefinitions.map(category =>
+            `<option value="${category.id}">${category.name}</option>`
+        ).join("");
+
+    categoryFilter.addEventListener("change", filterProducts);
+
+    const searchInput = document.getElementById("search");
+
+    if (searchInput) {
+        searchInput.addEventListener("input", filterProducts);
+    }
+}
+
 async function loadProducts() {
     const grid = document.getElementById("productGrid");
 
@@ -84,9 +109,13 @@ async function loadProducts() {
             ? result
             : (result.products || []);
 
+        console.log("Products loaded:", products.length);
+
         displayProducts(products);
 
     } catch (error) {
+        console.error("Product loading failed:", error);
+
         grid.innerHTML = `
             <div class="card">
                 <h3>Unable to load products</h3>
@@ -109,55 +138,69 @@ function displayProducts(items) {
         return;
     }
 
-    grid.innerHTML = items.map(product => `
-        <div class="product-card">
-            <div class="product-image">
-                ${product.image_url
-                    ? `<img src="${product.image_url}" style="width:100%;height:100%;object-fit:cover;">`
-                    : "🛍️"}
+    grid.innerHTML = items.map(product => {
+
+        let imageUrl = product.image_url || "";
+
+        if (imageUrl && !imageUrl.startsWith("/")) {
+            imageUrl = "/" + imageUrl;
+        }
+
+        const imageHtml = imageUrl
+            ? `<img src="${imageUrl}" alt="${product.name || "Product"}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='???';">`
+            : "???";
+
+        return `
+            <div class="product-card">
+
+                <div class="product-image">
+                    ${imageHtml}
+                </div>
+
+                <div class="product-info">
+
+                    <h3>${product.name || "Unnamed Product"}</h3>
+
+                    <p>
+                        ${product.description || "Local product from HunarHub"}
+                    </p>
+
+                    <p class="price">
+                        ?${product.price || "0"}
+                    </p>
+
+                    <p>
+                        Stock:
+                        <strong>${product.stock ?? 0}</strong>
+                    </p>
+
+                    <br>
+
+                    <a
+                        href="product.html?id=${product.id}"
+                        class="btn btn-primary"
+                    >
+                        View Product
+                    </a>
+
+                </div>
             </div>
-
-            <div class="product-info">
-                <h3>${product.name || "Unnamed Product"}</h3>
-
-                <p>
-                    ${product.description || "Local product from HunarHub"}
-                </p>
-
-                <p class="price">
-                    ₹${product.price || "0"}
-                </p>
-
-                <p>
-                    Stock:
-                    <strong>${product.stock ?? 0}</strong>
-                </p>
-
-                <br>
-
-                <a
-                    href="product.html?id=${product.id}"
-                    class="btn btn-primary"
-                >
-                    View Product
-                </a>
-            </div>
-        </div>
-    `).join("");
+        `;
+    }).join("");
 }
 
 function filterProducts() {
-    const search = document
-        .getElementById("search")
-        .value
-        .trim()
-        .toLowerCase();
 
-    const categorySelect = document.getElementById("categoryFilter");
+    const searchInput = document.getElementById("search");
+    const categoryFilter = document.getElementById("categoryFilter");
 
-    const category = String(
-        categorySelect.value || ""
-    ).trim().toLowerCase();
+    const search = searchInput
+        ? searchInput.value.trim().toLowerCase()
+        : "";
+
+    const selectedCategoryId = categoryFilter
+        ? String(categoryFilter.value || "")
+        : "";
 
     const filtered = products.filter(product => {
 
@@ -169,28 +212,29 @@ function filterProducts() {
             product.description || ""
         ).trim().toLowerCase();
 
-        const productCategory = String(
-            product.category_name ||
-            product.category ||
-            ""
-        ).trim().toLowerCase();
-
         const matchesSearch =
             !search ||
             name.includes(search) ||
             description.includes(search);
 
         const matchesCategory =
-            !category ||
-            category === "all categories" ||
-            productCategory === category;
+            !selectedCategoryId ||
+            String(product.category_id) === selectedCategoryId;
 
         return matchesSearch && matchesCategory;
     });
 
+    console.log(
+        "Filter:",
+        selectedCategoryId || "ALL",
+        "Results:",
+        filtered.length
+    );
+
     displayProducts(filtered);
 }
 
+setupCategoryFilter();
 loadProducts();
 </script>
 
